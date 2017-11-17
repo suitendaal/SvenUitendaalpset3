@@ -384,7 +384,7 @@ public class MainActivity extends AppCompatActivity {
         String url = "https://resto.mprog.nl/order";
 
         // Request a string response from the provided URL.
-        JsonObjectRequest priceRequest = new JsonObjectRequest(
+        JsonObjectRequest timeRequest = new JsonObjectRequest(
                 Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
@@ -405,9 +405,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Add the request to the RequestQueue.
-        queue.add(priceRequest);
+        queue.add(timeRequest);
 
-//        itemDescription.setText("Hier komt de tijdsduur");
         itemPrice.setText("Total price: €" + price);
     }
 
