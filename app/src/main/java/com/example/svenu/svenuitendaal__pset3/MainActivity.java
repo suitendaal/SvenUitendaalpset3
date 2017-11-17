@@ -1,5 +1,6 @@
 package com.example.svenu.svenuitendaal__pset3;
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -21,6 +22,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
@@ -91,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
         queue = Volley.newRequestQueue(this);
 
         loadJSONArray();
+        loadSharedPrefs();
         loadCategories();
     }
 
@@ -335,12 +338,14 @@ public class MainActivity extends AppCompatActivity {
         if (buttonText.equals("Submit")) {
             chosenItems.add(itemText);
             apology("You have ordered " + itemText);
+            saveToSharedPrefs();
             loadCategories();
         }
 
         else if (buttonText.equals("Delete")) {
             chosenItems.remove(orderIndex);
             apology("You have removed " + itemText);
+            saveToSharedPrefs();
             loadOrder();
         }
 
@@ -375,9 +380,63 @@ public class MainActivity extends AppCompatActivity {
             idList.add(ids.get(index));
         }
 
-        itemDescription.setText("Hier komt de tijdsduur");
+        // Estimated time
+        String url = "https://resto.mprog.nl/order";
+
+        // Request a string response from the provided URL.
+        JsonObjectRequest priceRequest = new JsonObjectRequest(
+                Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    //
+                    String estimated_time = response.getString("preparation_time");
+                    itemDescription.setText("The estimated time is " + estimated_time + " minutes.");
+                }
+                catch (JSONException exception) {
+                    apology("No time available");
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                apology("No internet connection");
+            }
+        });
+
+        // Add the request to the RequestQueue.
+        queue.add(priceRequest);
+
+//        itemDescription.setText("Hier komt de tijdsduur");
         itemPrice.setText("Total price: €" + price);
     }
 
+    public void saveToSharedPrefs() {
+        SharedPreferences prefs = this.getSharedPreferences("settings", this.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        int chosenItemsSize = chosenItems.size();
+        editor.putInt("chosenItemsSize", chosenItemsSize);
+
+        for (int i = 0; i < chosenItemsSize; i+=1) {
+            editor.remove("chosenItem" + i);
+            editor.putString("chosenItem" + i, chosenItems.get(i));
+        }
+
+        editor.commit();
+    }
+
+    public void loadSharedPrefs() {
+        SharedPreferences prefs = this.getSharedPreferences("settings", this.MODE_PRIVATE);
+
+        int chosenItemsSize = prefs.getInt("chosenItemsSize", 0);
+
+        for (int i = 0; i < chosenItemsSize; i+=1) {
+            String chosenItemRestored = prefs.getString("chosenItem" + i, null);
+            if (chosenItemRestored != null) {
+                chosenItems.add(chosenItemRestored);
+            }
+        }
+    }
 
 }
